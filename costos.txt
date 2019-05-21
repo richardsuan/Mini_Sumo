@@ -1,0 +1,17 @@
+costos:
+
+motores X3: c/u 15.000   total:45.000
+sensores infrarrojo X4 con driver: c/u 24.000 total:24.000
+sensor sharp infrarrojo: c/u 26.000 total:26.000
+modulo puente H X1: c/u 10.000 total: 10.000
+borneras X2: c/u 500 total:1.000
+LM7805 X1: c/u 1.000 total:1.000
+bateria LiPo de 2 celdas X1: c/u 44.000 total:44.000
+capacitores X3: c/u 200 total:600
+74N04 X1: c/u 600 total:600
+resistencias X5: total:500
+tornillos X4: total:1000
+par de ruedas X1: total:35.000
+paquete de jumpers X1: total:6.000
+
+TOTAL: 194.700
