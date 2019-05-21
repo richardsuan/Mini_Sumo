@@ -83,8 +83,10 @@ typedef enum{
 }ST_BOTON;
 enum{
 	T_MOTOR=0,
+	T_MOTOR2,
 	T_BOTON,
 	T_TURN,
+	T_EMPUJE,
 	timers
 };
 uint8_t aux=0;
@@ -146,7 +148,7 @@ void B1_process();
   * @retval int
   */
 int main(void)
-	{
+{
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -465,8 +467,10 @@ static void MX_GPIO_Init(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){  //timer cada 100us
 	if(htim->Instance==TIM2){
 		for(i=0;i<timers;i++){
-			if(TIMERS[i]!=0){
+			if(TIMERS[i]!=0&& i<4){
 				TIMERS[i]--;
+			}else{
+				TIMERS[i]++;
 			}
 		}
 	}
@@ -489,17 +493,19 @@ void IR1_process(){
 
 void SP_process(){
 	switch(SP){
-	case(IR_OFF):
+	case(IR_ON):
 		if(HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_11)==1){
+			//NO HAY NADIE
 			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_13, GPIO_PIN_SET);
-			SP=IR_ON;
+			SP=IR_OFF;
+
 		}
 			break;
-	case(IR_ON):
+	case(IR_OFF):
 		if(HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_11)==0){
-			//hay alguien
 			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_13, GPIO_PIN_RESET);
-			SP=IR_OFF;
+			TIMERS[T_EMPUJE]=0;
+			SP=IR_ON;
 		}
 			break;
 	}
@@ -560,27 +566,27 @@ void M1_process(){
 			M1=M_STB;
 			break;
 		case M_RUN_MIN_DER:
-			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,4500);
-			M1=M_STB;
-			break;
-		case M_RUN_MID_IZQ:
-			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,7000);
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,4000);
 			M1=M_STB;
 			break;
 		case M_RUN_MID_DER:
-			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,3000);
-			M1=M_STB;
-			break;
-		case M_RUN_MIN_IZQ:
-			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,5500);
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,2750);
 			M1=M_STB;
 			break;
 		case M_RUN_MAX_DER:
-			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,1);
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,1000);
+			M1=M_STB;
+			break;
+		case M_RUN_MIN_IZQ:
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,6000);
+			M1=M_STB;
+			break;
+		case M_RUN_MID_IZQ:
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,7250);
 			M1=M_STB;
 			break;
 		case M_RUN_MAX_IZQ:
-			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,9999);
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,9000);
 			M1=M_STB;
 			break;
 	}
@@ -599,24 +605,24 @@ void M2_process(){
 			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,4000);
 			M2=M_STB;
 			break;
+		case M_RUN_MID_DER:
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,2750);
+			M2=M_STB;
+			break;
+		case M_RUN_MAX_DER:
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,1000);
+			M2=M_STB;
+			break;
 		case M_RUN_MIN_IZQ:
 			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,6000);
 			M2=M_STB;
 			break;
-		case M_RUN_MAX_DER:
-			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,1);
+		case M_RUN_MID_IZQ:
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,7250);
 			M2=M_STB;
 			break;
 		case M_RUN_MAX_IZQ:
-			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,9999);
-			M2=M_STB;
-			break;
-		case M_RUN_MID_IZQ:
-			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,7000);
-			M2=M_STB;
-			break;
-		case M_RUN_MID_DER:
-			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,3000);
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,9000);
 			M2=M_STB;
 			break;
 	}
@@ -626,34 +632,39 @@ void LOC_process(){
 	switch(LOC){
 		case LOC_CHECK:
 			if(IR1==IR_BLANCO && IR2==IR_NEGRO){
-				M1=M_STOP;
+				M1=M_RUN_MIN_IZQ;
 				M2=M_RUN_MID_DER;
 			}else if(IR2==IR_BLANCO && IR1==IR_NEGRO){
-				M2=M_STOP;
+				M2=M_RUN_MIN_IZQ;
 				M1=M_RUN_MID_DER;
 			}else if(IR1==IR_BLANCO && IR2==IR_BLANCO){
-				M1=M_RUN_MID_IZQ;
-				M2=M_RUN_MID_IZQ;
-				TIMERS[T_MOTOR]=9000;
+				M1=M_RUN_MAX_IZQ;
+				M2=M_RUN_MAX_IZQ;
+				TIMERS[T_MOTOR]=7000;
 				LOC=LOC_STB;
 			}else if(IR3==IR_BLANCO && IR4==IR_NEGRO){
-				M2=M_STOP;
-				M1=M_RUN_MID_DER;
+				M1=M_RUN_MIN_IZQ;
+				M2=M_RUN_MID_DER;
 			}else if(IR4==IR_BLANCO && IR3==IR_NEGRO){
-				M1=M_STOP;
+				M1=M_RUN_MIN_IZQ;
 				M2=M_RUN_MID_DER;
 			}else if(IR3==IR_BLANCO && IR4==IR_BLANCO){
-				M1=M_RUN_MID_DER;
-				M2=M_RUN_MID_DER;
-				TIMERS[T_MOTOR]=9000;
+				M1=M_RUN_MAX_DER;
+				M2=M_RUN_MAX_DER;
+				TIMERS[T_MOTOR]=7000;
 				LOC=LOC_STB;
 			}else if(IR1==IR_NEGRO && IR2==IR_NEGRO && IR3==IR_NEGRO && IR4==IR_NEGRO){
-				if(SP==IR_ON){
-					M1=M_RUN_MID_DER;
-					M2=M_RUN_MID_IZQ;
-				}else if(SP==IR_OFF){
+				if(SP==IR_OFF){
+					M1=M_RUN_MID_IZQ;
 					M2=M_RUN_MID_DER;
-					M1=M_RUN_MID_DER;
+				}else if(SP==IR_ON){
+					if(TIMERS[T_EMPUJE]>7500){
+						M2=M_RUN_MAX_IZQ;
+						M1=M_RUN_MAX_IZQ;
+					}else if(TIMERS[T_EMPUJE]<=5000&&TIMERS[T_EMPUJE]>=0){
+						M2=M_RUN_MID_IZQ;
+						M1=M_RUN_MID_IZQ;
+					}
 				}
 			}
 			break;
